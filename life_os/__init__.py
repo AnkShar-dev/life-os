@@ -1,1 +1,0 @@
-"""life-os core package."""
