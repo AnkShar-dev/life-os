@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -49,3 +50,30 @@ class SQLiteRepository:
     def save_resume_version(self, payload: dict[str, Any]) -> None:
         with self._connect() as conn:
             conn.execute("INSERT INTO resume_versions (content) VALUES (?)", (json.dumps(payload),))
+
+
+@dataclass(order=True)
+class ApprovalItem:
+    request_id: str
+    approved_by: list[str] = field(default_factory=list)
+
+
+class ApprovalRepository:
+    def __init__(self) -> None:
+        self._items: dict[str, ApprovalItem] = {}
+
+    def request(self, request_id: str) -> None:
+        self._items.setdefault(request_id, ApprovalItem(request_id=request_id))
+
+    def approve(self, request_id: str, approver: str) -> None:
+        item = self._items.setdefault(request_id, ApprovalItem(request_id=request_id))
+        if approver not in item.approved_by:
+            item.approved_by.append(approver)
+
+    def status(self, request_id: str, required_approvers: set[str]) -> dict[str, object]:
+        item = self._items.setdefault(request_id, ApprovalItem(request_id=request_id))
+        approved = required_approvers.issubset(set(item.approved_by))
+        return {"approved": approved, "approved_by": item.approved_by}
+
+    def list_pending(self) -> list[ApprovalItem]:
+        return [self._items[k] for k in sorted(self._items)]
