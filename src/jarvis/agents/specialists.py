@@ -113,6 +113,23 @@ class BriefAgent(BaseAgent):
             "Watch AI infra spend and policy changes affecting builders and listed tech.",
             "Monitor Fed + oil shocks for cross-asset volatility impact on India.",
         ]
+        telegram_text = "\n".join(
+            [
+                "*Daily Brief*",
+                "",
+                "🇮🇳 India Market",
+                f"• {market.details['headlines'][0]['title']}",
+                "",
+                "🤖 AI & Tech",
+                f"• {news.details['headlines'][0]['title']}",
+                "",
+                "🌍 World",
+                f"• {world.details['headlines'][0]['title']}",
+                "",
+                "👀 Watch points",
+                "• " + "\n• ".join(watch_points),
+            ]
+        )
         return AgentResponse(
             agent=self.name,
             summary="Daily combined briefing ready.",
@@ -121,7 +138,7 @@ class BriefAgent(BaseAgent):
                 "news": news.details,
                 "world": world.details,
                 "top_watch_points": watch_points,
-                "telegram_format": "*Daily Brief*\n- India market\n- AI/Tech\n- World\n- Top 3 watch points\n(Concise for scheduled n8n delivery)",
+                "telegram_format": telegram_text,
             },
         )
 
