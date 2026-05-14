@@ -1,41 +1,25 @@
+"""Approval workflow service."""
+
 from __future__ import annotations
 
-from jarvis.storage.repository import ApprovalRepository, PendingApproval
+import uuid
 
-
-class ApprovalError(RuntimeError):
-    pass
+from jarvis.schemas.common import ApprovalDecision, ApprovalRequest
+from jarvis.storage.repository import SQLiteRepository
 
 
 class ApprovalService:
-    """End-to-end approval flow backed by ApprovalRepository."""
+    """Creates and resolves approval requests for risky actions."""
 
-    def __init__(self, required_approvers: set[str], repository: ApprovalRepository) -> None:
-        if not required_approvers:
-            raise ApprovalError("required_approvers cannot be empty")
-        self.required_approvers = set(required_approvers)
+    def __init__(self, repository: SQLiteRepository) -> None:
         self.repository = repository
 
-    def request(self, request_id: str) -> None:
-        self.repository.save(PendingApproval(request_id=request_id, required_approvers=set(self.required_approvers)))
+    def create(self, action_type: str, payload: dict) -> ApprovalRequest:
+        approval = ApprovalRequest(approval_id=str(uuid.uuid4()), action_type=action_type, payload=payload)
+        self.repository.save_approval(approval.approval_id, action_type, payload)
+        return approval
 
-    def approve(self, request_id: str, approver: str) -> None:
-        if approver not in self.required_approvers:
-            raise ApprovalError(f"Unexpected approver: {approver}")
-        request = self.repository.get(request_id)
-        if not request:
-            raise ApprovalError(f"Unknown request_id: {request_id}")
-        request.approved_by.add(approver)
-
-    def status(self, request_id: str) -> dict[str, object]:
-        request = self.repository.get(request_id)
-        if not request:
-            raise ApprovalError(f"Unknown request_id: {request_id}")
-
-        approved = request.required_approvers.issubset(request.approved_by)
-        return {
-            "request_id": request.request_id,
-            "approved": approved,
-            "approved_by": sorted(request.approved_by),
-            "required_approvers": sorted(request.required_approvers),
-        }
+    def decide(self, decision: ApprovalDecision) -> str:
+        status = "approved" if decision.decision.lower() == "approve" else "rejected"
+        self.repository.set_approval_status(decision.approval_id, status)
+        return status
