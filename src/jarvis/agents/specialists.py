@@ -15,8 +15,15 @@ class NewsAgent(BaseAgent):
     async def handle(self, request: AgentRequest) -> AgentResponse:
         return AgentResponse(
             agent=self.name,
-            summary="Top AI/tech stories prepared.",
-            details={"brief": ["AI infra costs are falling.", "New agentic tools shipping fast."], "why_it_matters": "Faster iteration and lower build cost."},
+            summary="AI & tech briefing ready.",
+            details={
+                "highlights": [
+                    "Frontier model releases and benchmark shifts.",
+                    "Enterprise AI copilots and agent stacks shipping rapidly.",
+                    "Semiconductor, cloud, and data-center capex signals.",
+                ],
+                "focus": "Technology and AI developments relevant to builders and investors.",
+            },
         )
 
 
@@ -25,7 +32,57 @@ class MarketAgent(BaseAgent):
     supported_commands = {"/market"}
 
     async def handle(self, request: AgentRequest) -> AgentResponse:
-        return AgentResponse(agent=self.name, summary="Daily market update prepared.", details={"note": "No trades executed."})
+        return AgentResponse(
+            agent=self.name,
+            summary="India market briefing ready.",
+            details={
+                "indices": ["Nifty 50", "Sensex", "Bank Nifty"],
+                "sectors": ["IT", "Banking", "Auto", "Pharma", "Energy"],
+                "macro": ["Oil", "INR", "Inflation", "RBI", "FII/DII flows"],
+                "headlines": "Major Indian market headlines and positioning context.",
+                "note": "No trades executed.",
+            },
+        )
+
+
+class WorldAgent(BaseAgent):
+    name = "world"
+    supported_commands = {"/world"}
+
+    async def handle(self, request: AgentRequest) -> AgentResponse:
+        return AgentResponse(
+            agent=self.name,
+            summary="World briefing ready.",
+            details={
+                "coverage": ["Global markets", "Technology policy", "Oil", "Geopolitics", "Regulation"],
+                "intent": "Major global developments that can influence risk sentiment and capital flows.",
+            },
+        )
+
+
+class BriefAgent(BaseAgent):
+    name = "brief"
+    supported_commands = {"/brief"}
+
+    def __init__(self, market_agent: MarketAgent, news_agent: NewsAgent, world_agent: WorldAgent) -> None:
+        self.market_agent = market_agent
+        self.news_agent = news_agent
+        self.world_agent = world_agent
+
+    async def handle(self, request: AgentRequest) -> AgentResponse:
+        market = await self.market_agent.handle(request.model_copy(update={"command": "/market"}))
+        news = await self.news_agent.handle(request.model_copy(update={"command": "/news"}))
+        world = await self.world_agent.handle(request.model_copy(update={"command": "/world"}))
+        return AgentResponse(
+            agent=self.name,
+            summary="Daily combined briefing ready.",
+            details={
+                "market": market.details,
+                "news": news.details,
+                "world": world.details,
+                "telegram_format": "Short bullets for daily delivery; webhook-compatible for n8n scheduling.",
+            },
+        )
 
 
 class TradingAgent(BaseAgent):

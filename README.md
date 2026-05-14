@@ -10,7 +10,7 @@ A production-minded but simple local-first **personal multi-agent assistant** wi
 - **Router Layer**
   - `RouterAgent` receives commands and dispatches to specialist agents.
 - **Specialist Agents**
-  - News, Market, Trading, Finance, Resume, Job, Instagram.
+  - News (AI/tech), Market (India-focused), World, Brief, Trading, Finance, Resume, Job, Instagram.
 - **Approval Layer**
   - Central `ApprovalService` creates/decides approval requests.
   - Mandatory approvals for trading execution, job apply, and Instagram publish.
@@ -65,7 +65,7 @@ life-os/
 
 ## 4) Starter code notes
 
-- **Router commands**: `/news`, `/market`, `/finance`, `/resume`, `/jobs`, `/reel`, `/trade`.
+- **Router commands**: `/news` (AI/tech), `/market` (India markets), `/world` (global macro), `/brief` (combined daily briefing), `/finance`, `/resume`, `/jobs`, `/reel`, `/trade`.
 - **Approval commands** (wire-up ready): `/approve`, `/reject`.
 - **FastAPI webhooks**:
   - `POST /webhooks/command`
@@ -120,6 +120,8 @@ curl -X POST http://127.0.0.1:8000/webhooks/approval \
 ## Telegram commands
 - `/news`
 - `/market`
+- `/world`
+- `/brief`
 - `/finance`
 - `/resume`
 - `/jobs`
@@ -134,3 +136,16 @@ curl -X POST http://127.0.0.1:8000/webhooks/approval \
 - Better NLP intent parsing beyond command routing.
 - Backtesting and stricter risk policy engine.
 - Resume templating + PDF export.
+
+
+## Manual testing checklist
+
+1. Start API server: `uvicorn jarvis.api.main:app --reload`
+2. Verify health: `curl http://127.0.0.1:8000/health`
+3. Test briefing commands through webhook:
+   - `curl -X POST http://127.0.0.1:8000/webhooks/command -H "content-type: application/json" -d '{"command":"/market"}'`
+   - `curl -X POST http://127.0.0.1:8000/webhooks/command -H "content-type: application/json" -d '{"command":"/news"}'`
+   - `curl -X POST http://127.0.0.1:8000/webhooks/command -H "content-type: application/json" -d '{"command":"/world"}'`
+   - `curl -X POST http://127.0.0.1:8000/webhooks/command -H "content-type: application/json" -d '{"command":"/brief"}'`
+4. In Telegram, verify `/market`, `/news`, `/world`, and `/brief` all return message text.
+

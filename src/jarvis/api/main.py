@@ -11,6 +11,8 @@ from jarvis.agents.specialists import (
     NewsAgent,
     ResumeAgent,
     TradingAgent,
+    WorldAgent,
+    BriefAgent,
 )
 from jarvis.core.config import get_settings
 from jarvis.core.logging import setup_logging
@@ -22,10 +24,16 @@ settings = get_settings()
 setup_logging(settings.log_level)
 repo = SQLiteRepository(settings.sqlite_path)
 approvals = ApprovalService(repo)
+news_agent = NewsAgent()
+market_agent = MarketAgent()
+world_agent = WorldAgent()
+
 router = RouterAgent(
     [
-        NewsAgent(),
-        MarketAgent(),
+        news_agent,
+        market_agent,
+        world_agent,
+        BriefAgent(market_agent, news_agent, world_agent),
         TradingAgent(approvals, repo),
         FinanceAgent(),
         ResumeAgent(repo),
