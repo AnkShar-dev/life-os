@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from jarvis.agents.base import BaseAgent
+from jarvis.core.config import Settings, get_settings
 from jarvis.schemas.common import AgentRequest, AgentResponse
 from jarvis.services.approval import ApprovalService
+from jarvis.services.briefing_sources import BriefingSourceService
 from jarvis.storage.repository import SQLiteRepository
 
 
@@ -12,17 +14,27 @@ class NewsAgent(BaseAgent):
     name = "news"
     supported_commands = {"/news"}
 
+    def __init__(self, source_service: BriefingSourceService | None = None, settings: Settings | None = None) -> None:
+        self.source_service = source_service or BriefingSourceService()
+        self.settings = settings or get_settings()
+
     async def handle(self, request: AgentRequest) -> AgentResponse:
+        fallback = [
+            {"title": "Frontier model launches accelerate product cycles.", "source": "mock"},
+            {"title": "AI copilots spread across enterprise workflows.", "source": "mock"},
+            {"title": "Cloud + chips capex indicates sustained infra race.", "source": "mock"},
+        ]
+        headlines, used_mock = self.source_service.fetch_or_fallback(self.settings.news_sources, fallback)
         return AgentResponse(
             agent=self.name,
             summary="AI & tech briefing ready.",
             details={
-                "highlights": [
-                    "Frontier model releases and benchmark shifts.",
-                    "Enterprise AI copilots and agent stacks shipping rapidly.",
-                    "Semiconductor, cloud, and data-center capex signals.",
-                ],
-                "focus": "Technology and AI developments relevant to builders and investors.",
+                "headlines": headlines,
+                "builder_relevance": "Builder product velocity, tooling choices, and model integration patterns.",
+                "investor_relevance": "Revenue capture, infra spend, and competitive moat signals.",
+                "why_it_matters": "AI platform shifts can rapidly change both startup execution and listed tech valuations.",
+                "source_labels": self.source_service.labels(headlines),
+                "fallback_used": used_mock,
             },
         )
 
@@ -31,16 +43,27 @@ class MarketAgent(BaseAgent):
     name = "market"
     supported_commands = {"/market"}
 
+    def __init__(self, source_service: BriefingSourceService | None = None, settings: Settings | None = None) -> None:
+        self.source_service = source_service or BriefingSourceService()
+        self.settings = settings or get_settings()
+
     async def handle(self, request: AgentRequest) -> AgentResponse:
+        fallback = [
+            {"title": "Indian indices trade mixed ahead of policy signals.", "source": "mock"},
+            {"title": "Banks and IT lead direction while defensives stabilize.", "source": "mock"},
+            {"title": "Foreign flow and crude movement set near-term tone.", "source": "mock"},
+        ]
+        headlines, used_mock = self.source_service.fetch_or_fallback(self.settings.market_sources, fallback)
         return AgentResponse(
             agent=self.name,
             summary="India market briefing ready.",
             details={
                 "indices": ["Nifty 50", "Sensex", "Bank Nifty"],
-                "sectors": ["IT", "Banking", "Auto", "Pharma", "Energy"],
-                "macro": ["Oil", "INR", "Inflation", "RBI", "FII/DII flows"],
-                "headlines": "Major Indian market headlines and positioning context.",
-                "note": "No trades executed.",
+                "sector_context": ["IT", "Banking", "Auto", "Pharma", "Energy"],
+                "macro_context": ["Oil", "INR", "Inflation", "RBI", "FII/DII flows"],
+                "headlines": headlines,
+                "note": "No trade execution.",
+                "fallback_used": used_mock,
             },
         )
 
@@ -49,13 +72,25 @@ class WorldAgent(BaseAgent):
     name = "world"
     supported_commands = {"/world"}
 
+    def __init__(self, source_service: BriefingSourceService | None = None, settings: Settings | None = None) -> None:
+        self.source_service = source_service or BriefingSourceService()
+        self.settings = settings or get_settings()
+
     async def handle(self, request: AgentRequest) -> AgentResponse:
+        fallback = [
+            {"title": "US rates path and inflation prints remain key risk drivers.", "source": "mock"},
+            {"title": "Oil volatility and shipping risk shape energy outlook.", "source": "mock"},
+            {"title": "Tech regulation and AI policy tighten globally.", "source": "mock"},
+        ]
+        headlines, used_mock = self.source_service.fetch_or_fallback(self.settings.world_sources, fallback)
         return AgentResponse(
             agent=self.name,
             summary="World briefing ready.",
             details={
-                "coverage": ["Global markets", "Technology policy", "Oil", "Geopolitics", "Regulation"],
-                "intent": "Major global developments that can influence risk sentiment and capital flows.",
+                "coverage": ["Global markets", "US Fed/rates/inflation", "Oil", "Geopolitics", "Regulation", "Technology policy"],
+                "relevance": "Signals that can spill into Indian markets, INR, IT exports, and tech valuations.",
+                "headlines": headlines,
+                "fallback_used": used_mock,
             },
         )
 
@@ -73,6 +108,11 @@ class BriefAgent(BaseAgent):
         market = await self.market_agent.handle(request.model_copy(update={"command": "/market"}))
         news = await self.news_agent.handle(request.model_copy(update={"command": "/news"}))
         world = await self.world_agent.handle(request.model_copy(update={"command": "/world"}))
+        watch_points = [
+            "Track RBI/FII-DII and INR trend for domestic risk appetite.",
+            "Watch AI infra spend and policy changes affecting builders and listed tech.",
+            "Monitor Fed + oil shocks for cross-asset volatility impact on India.",
+        ]
         return AgentResponse(
             agent=self.name,
             summary="Daily combined briefing ready.",
@@ -80,7 +120,8 @@ class BriefAgent(BaseAgent):
                 "market": market.details,
                 "news": news.details,
                 "world": world.details,
-                "telegram_format": "Short bullets for daily delivery; webhook-compatible for n8n scheduling.",
+                "top_watch_points": watch_points,
+                "telegram_format": "*Daily Brief*\n- India market\n- AI/Tech\n- World\n- Top 3 watch points\n(Concise for scheduled n8n delivery)",
             },
         )
 
