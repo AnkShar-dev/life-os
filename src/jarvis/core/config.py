@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     news_sources: list[str] = Field(default_factory=list)
     market_sources: list[str] = Field(default_factory=list)
+    world_sources: list[str] = Field(default_factory=list)
     enable_mock_data: bool = True
 
 
