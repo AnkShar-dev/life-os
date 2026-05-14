@@ -163,7 +163,34 @@ curl -X POST http://127.0.0.1:8000/webhooks/command \
   -d '{"command":"/brief"}'
 ```
 
-## 10) Current mock/fallback scope
+## 10) Live Telegram testing
+
+Follow this checklist for first live run:
+
+1. Create your Telegram bot with **@BotFather** and copy the token.
+2. Copy env template:
+   ```bash
+   cp .env.example .env
+   ```
+3. Add `APP_TELEGRAM_BOT_TOKEN=<your-bot-token>` in `.env`.
+4. Run the bot:
+   ```bash
+   python -c "from jarvis.main import run_telegram; run_telegram()"
+   ```
+5. In Telegram, send `/whoami` to the bot.
+6. Copy returned `chat_id` into:
+   ```bash
+   APP_ALLOWED_TELEGRAM_CHAT_IDS=123456789
+   ```
+7. Restart the bot process.
+8. Test `/news`, `/market`, `/world`, and `/brief`.
+9. Do **not** commit your `.env` file.
+
+- `APP_ALLOWED_TELEGRAM_CHAT_IDS` is optional. If set, Jarvis only processes messages from those chat IDs.
+- Use `/whoami` in Telegram to get your current `chat_id`, then add it to the allowlist.
+- `/news`, `/market`, `/world`, and `/brief` are registered Telegram commands and route to the same command handlers used by API/webhooks.
+
+## 11) Current mock/fallback scope
 
 - If configured sources are missing, unreachable, or invalid, Jarvis returns structured mock fallback bullets.
 - Source labels are included where available.

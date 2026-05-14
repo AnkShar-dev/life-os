@@ -80,7 +80,10 @@ def test_brief_combines_market_news_world_and_watch_points_for_telegram():
     assert "news" in response.details
     assert "world" in response.details
     assert len(response.details["top_watch_points"]) == 3
-    assert "Daily Brief" in response.details["telegram_format"]
+    assert "🇮🇳 India Market" in response.details["telegram_format"]
+    assert "🤖 AI & Tech" in response.details["telegram_format"]
+    assert "🌍 World" in response.details["telegram_format"]
+    assert "👀 Watch points" in response.details["telegram_format"]
 
 
 def test_source_fallback_when_unreachable_or_missing():
